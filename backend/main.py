@@ -6,7 +6,6 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
-from rembg import remove
 from PIL import Image
 
 app = FastAPI(title="MosquitoVision API")
