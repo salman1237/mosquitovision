@@ -2,20 +2,20 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system libraries that opencv-python (pulled by ultralytics) needs
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxcb1 \
-    libx11-6 \
     libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-# Install deps, then force-swap GUI opencv → headless so no X11 display is needed at runtime
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip uninstall -y opencv-python 2>/dev/null || true \
-    && pip install --no-cache-dir opencv-python-headless
+# Step 1: install everything (ultralytics pulls in opencv-python GUI version)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Step 2: swap GUI opencv → headless; --force-reinstall ensures cv2 files are actually written
+# even if pip thinks opencv-python-headless is already recorded as installed
+RUN pip uninstall -y opencv-python opencv-python-headless 2>/dev/null; \
+    pip install --no-cache-dir --force-reinstall opencv-python-headless
 
 COPY . .
 
