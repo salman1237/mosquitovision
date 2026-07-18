@@ -1,7 +1,6 @@
 import os
 import io
 import base64
-import cv2
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -99,9 +98,7 @@ async def analyze_image(file: UploadFile = File(...)):
 
         # 3. Create Annotated Image
         annotated_img_bgr = result.plot()
-        
-        # Convert BGR (OpenCV) to RGB (PIL) to encode
-        annotated_img_rgb = cv2.cvtColor(annotated_img_bgr, cv2.COLOR_BGR2RGB)
+        annotated_img_rgb = annotated_img_bgr[:, :, ::-1]  # BGR → RGB via numpy slice
         annotated_pil = Image.fromarray(annotated_img_rgb)
         
         # 4. Encode as Base64
