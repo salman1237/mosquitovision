@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "MosquitoVision",
+    "slug": "mosquitovision",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "mosquitovision",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.salman.mosquitovision",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MosquitoVision needs gallery access to select mosquito images.",
+          "cameraPermission": "MosquitoVision needs camera access to capture mosquito photos."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c2ae6f04-b75c-4cae-a828-aab00adb8a1d"
+      }
+    }
+  }
+}
