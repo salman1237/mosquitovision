@@ -24,6 +24,21 @@ export default function DetectionResults({ result }: Props) {
         <Text style={styles.summaryCount}>{result.total_detected}</Text>
       </View>
 
+      {/* GradCAM heatmap */}
+      {result.gradcam_base64 && (
+        <View style={styles.gradcamContainer}>
+          <Text style={styles.gradcamTitle}>GradCAM Explanation</Text>
+          <Image
+            source={{ uri: result.gradcam_base64 }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+          <Text style={styles.gradcamCaption}>
+            Red/warm areas = regions the model weighted most heavily when identifying the species
+          </Text>
+        </View>
+      )}
+
       {result.alerts.length === 0 ? (
         <View style={styles.noDetection}>
           <Text style={styles.noDetectionText}>No mosquitoes detected in this image.</Text>
@@ -66,6 +81,28 @@ const styles = StyleSheet.create({
     color: colors.green,
     fontSize: font.lg,
     fontWeight: '700',
+  },
+  gradcamContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#581c87',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  gradcamTitle: {
+    color: '#c084fc',
+    fontSize: font.sm,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+  },
+  gradcamCaption: {
+    color: colors.textMuted,
+    fontSize: font.sm,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   noDetection: {
     padding: spacing.lg,

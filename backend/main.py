@@ -6,6 +6,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 from PIL import Image
+from gradcam import generate_gradcam
 
 app = FastAPI(title="MosquitoVision API")
 
@@ -108,11 +109,21 @@ async def analyze_image(file: UploadFile = File(...)):
 
         alerts_list = list(triggered_alerts.values())
 
+        # GradCAM heatmap — runs on the original image, fails gracefully
+        gradcam_base64 = None
+        if model and alerts_list:
+            heatmap = generate_gradcam(model, raw_img)
+            if heatmap:
+                buf = io.BytesIO()
+                heatmap.save(buf, format="PNG")
+                gradcam_base64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
+
         return {
             "success": True,
             "alerts": alerts_list,
             "total_detected": sum(a['count'] for a in alerts_list),
-            "image_base64": f"data:image/png;base64,{img_base64}"
+            "image_base64": f"data:image/png;base64,{img_base64}",
+            "gradcam_base64": gradcam_base64,
         }
 
     except Exception as e:

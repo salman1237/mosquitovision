@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Eye, Bug } from 'lucide-react';
+import { CheckCircle2, Eye, Bug, FlaskConical } from 'lucide-react';
 import Image from 'next/image';
 import AlertCard from './AlertCard';
 import type { AnalysisResult } from '@/types';
@@ -61,6 +61,30 @@ export default function DetectionResults({ result }: { result: AnalysisResult })
           />
         </div>
       </div>
+
+      {/* GradCAM heatmap */}
+      {result.gradcam_base64 && (
+        <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <FlaskConical className="h-4 w-4 text-purple-400" />
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">GradCAM Explanation</p>
+            <span className="ml-auto text-xs text-slate-600">Highlighted regions drove the classification</span>
+          </div>
+          <div className="flex justify-center">
+            <Image
+              src={result.gradcam_base64}
+              alt="GradCAM heatmap"
+              width={640}
+              height={640}
+              className="rounded-lg object-contain max-h-[420px] w-auto"
+              unoptimized
+            />
+          </div>
+          <p className="text-xs text-slate-600 mt-3 text-center">
+            Red/warm areas = regions the model weighted most heavily when identifying the species
+          </p>
+        </div>
+      )}
 
       {/* Alert cards */}
       {result.alerts.length > 0 && (

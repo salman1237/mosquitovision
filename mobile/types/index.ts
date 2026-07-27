@@ -12,6 +12,7 @@ export interface AnalysisResult {
   alerts: Alert[];
   total_detected: number;
   image_base64: string;
+  gradcam_base64?: string | null;
 }
 
 export interface HistoryEntry {
