@@ -7,6 +7,35 @@ import { Upload, ImageIcon, X, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Image from 'next/image';
 
+const MAX_DIMENSION = 1024;
+const JPEG_QUALITY = 0.8;
+
+function resizeFile(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { naturalWidth: w, naturalHeight: h } = img;
+      if (w <= MAX_DIMENSION && h <= MAX_DIMENSION) {
+        resolve(file);
+        return;
+      }
+      const scale = MAX_DIMENSION / Math.max(w, h);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => resolve(new File([blob!], file.name, { type: 'image/jpeg' })),
+        'image/jpeg',
+        JPEG_QUALITY,
+      );
+    };
+    img.src = url;
+  });
+}
+
 interface ImageUploaderProps {
   onAnalyze: (file: File) => Promise<void>;
   onClear: () => void;
@@ -42,7 +71,9 @@ export default function ImageUploader({ onAnalyze, onClear, isLoading }: ImageUp
   };
 
   const handleAnalyze = async () => {
-    if (file) await onAnalyze(file);
+    if (!file) return;
+    const resized = await resizeFile(file);
+    await onAnalyze(resized);
   };
 
   return (
