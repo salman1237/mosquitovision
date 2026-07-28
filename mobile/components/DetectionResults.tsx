@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import type { AnalysisResult } from '@/types';
 import AlertCard from './AlertCard';
 import { colors, spacing, radius, font } from '@/constants/theme';
@@ -10,7 +10,7 @@ interface Props {
 
 export default function DetectionResults({ result }: Props) {
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View>
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: result.image_base64 }}
@@ -48,7 +48,7 @@ export default function DetectionResults({ result }: Props) {
           <AlertCard key={i} alert={alert} />
         ))
       )}
-    </ScrollView>
+    </View>
   );
 }
 
