@@ -30,7 +30,7 @@ export default function DetectionResults({ result }: Props) {
           <Text style={styles.gradcamTitle}>GradCAM Explanation</Text>
           <Image
             source={{ uri: result.gradcam_base64 }}
-            style={styles.image}
+            style={styles.gradcamImage}
             resizeMode="contain"
           />
           <Text style={styles.gradcamCaption}>
@@ -97,6 +97,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: spacing.sm,
+  },
+  // The GradCAM heatmap is always square (640x640 from the backend).
+  // aspectRatio sizes it from its own width -- a percentage height would
+  // resolve to zero here, since gradcamContainer has no explicit height.
+  gradcamImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: radius.sm,
   },
   gradcamCaption: {
     color: colors.textMuted,
