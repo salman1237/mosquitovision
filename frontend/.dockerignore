@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+build/
+
+.git/
+.gitignore
+
+# Do NOT ship local env files into the image - the API URL is supplied
+# as a build arg instead (see Dockerfile).
+.env
+.env.*
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.vscode/
+.idea/
+.DS_Store
+
+# Tests aren't needed in the production image
+tests/
+test-results/
+playwright-report/

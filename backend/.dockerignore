@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Railway / FastAPI Cloud leftovers - not needed on the VPS
+.fastapicloud/
+Procfile
+
+.git/
+.gitignore
+.env
+.env.*
+
+# Local-only evaluation script; not part of the served API
+evaluate_dataset.py

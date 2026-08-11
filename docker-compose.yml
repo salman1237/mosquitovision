@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 2
+    # Hard ceiling so a runaway inference can't take the whole box down.
+    # Leave headroom for Dokploy's own stack (Traefik/Postgres/Redis ~1 GB).
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      # Generous start_period: loading the YOLO model takes ~30-60s on 2 vCPU,
+      # and the container must not be killed as unhealthy while it warms up.
+      start_period: 180s
+      retries: 3
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # NOTE: this is the URL the *browser* will call, so it must be the
+        # public address of the backend (e.g. https://api.yourdomain.com).
+        # An internal name like http://backend:8000 will NOT work here -- the
+        # request originates from the visitor's machine, not from this container.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    expose:
+      - "3000"
