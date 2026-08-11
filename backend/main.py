@@ -71,7 +71,7 @@ async def analyze_image(file: UploadFile = File(...)):
         raw_img = Image.open(io.BytesIO(contents))
 
         # 1. YOLO Inference (No background removal needed with the new model!)
-        results = model(raw_img, conf=0.25)
+        results = model(raw_img, conf=0.4)
         result = results[0]
 
         triggered_alerts = {}
