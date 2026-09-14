@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AnalysisResult } from '@/types';
 
-const API_BASE = 'https://mosquitovision-backend-production.up.railway.app';
+const API_BASE = 'https://api-mosquitovision.salmandev.io';
 
 export async function analyzeImage(uri: string, filename: string): Promise<AnalysisResult> {
   const formData = new FormData();
