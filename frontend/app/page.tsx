@@ -6,6 +6,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
+import SampleGallery from '@/components/SampleGallery';
 import DetectionResults from '@/components/DetectionResults';
 import HistoryPanel from '@/components/HistoryPanel';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
@@ -27,6 +28,8 @@ export default function HomePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Image chosen from the server-side sample gallery; shown in the uploader preview.
+  const [sampleFile, setSampleFile] = useState<File | null>(null);
   const { history, addEntry, removeEntry, clearHistory } = useHistory();
 
   const handleAnalyze = async (file: File) => {
@@ -47,6 +50,12 @@ export default function HomePage() {
   const handleClear = () => {
     setResult(null);
     setError(null);
+    setSampleFile(null);
+  };
+
+  const handleSamplePick = async (file: File) => {
+    setSampleFile(file);
+    await handleAnalyze(file);
   };
 
   const handleRestore = (entry: HistoryEntry) => {
@@ -75,7 +84,12 @@ export default function HomePage() {
                 Select a mosquito image to identify the species and assess disease risk.
               </p>
             </div>
-            <ImageUploader onAnalyze={handleAnalyze} onClear={handleClear} isLoading={isLoading} />
+            <ImageUploader
+              onAnalyze={handleAnalyze}
+              onClear={handleClear}
+              isLoading={isLoading}
+              externalFile={sampleFile}
+            />
 
             <AnimatePresence>
               {error && (
@@ -100,6 +114,8 @@ export default function HomePage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <SampleGallery onPick={handleSamplePick} disabled={isLoading} />
           </section>
 
           {/* Right column: results */}

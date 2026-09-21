@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, ImageIcon, X, Loader2 } from 'lucide-react';
@@ -40,21 +40,38 @@ interface ImageUploaderProps {
   onAnalyze: (file: File) => Promise<void>;
   onClear: () => void;
   isLoading: boolean;
+  /** A file chosen outside the dropzone (e.g. from the sample gallery). */
+  externalFile?: File | null;
 }
 
-export default function ImageUploader({ onAnalyze, onClear, isLoading }: ImageUploaderProps) {
+export default function ImageUploader({ onAnalyze, onClear, isLoading, externalFile }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  // Last externalFile we mirrored, so a gallery pick is applied exactly once.
+  const [appliedExternal, setAppliedExternal] = useState<File | null>(null);
+
+  const selectFile = useCallback((f: File) => {
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  }, []);
+
+  // Release each object URL when it is replaced or the component unmounts.
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
+
+  // Mirror a gallery pick into the preview so the UI reads the same as an
+  // upload. Done during render (not in an effect) to avoid a cascading render.
+  if (externalFile && externalFile !== appliedExternal) {
+    setAppliedExternal(externalFile);
+    selectFile(externalFile);
+  }
 
   const onDrop = useCallback((accepted: File[]) => {
     const f = accepted[0];
-    if (!f) return;
-    setFile(f);
-    setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(f);
-    });
-  }, []);
+    if (f) selectFile(f);
+  }, [selectFile]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -64,8 +81,7 @@ export default function ImageUploader({ onAnalyze, onClear, isLoading }: ImageUp
   });
 
   const clear = () => {
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(null);
+    setPreview(null);   // the effect above revokes the object URL
     setFile(null);
     onClear();
   };

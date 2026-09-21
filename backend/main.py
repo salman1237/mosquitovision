@@ -1,14 +1,45 @@
 import os
 import io
 import base64
+import random
+from pathlib import Path
 import numpy as np
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from ultralytics import YOLO
 from PIL import Image
 from gradcam import generate_gradcam
 
 app = FastAPI(title="MosquitoVision API")
+
+# ---------------------------------------------------------------------------
+# Sample image library (for demos on machines without local test images).
+# SAMPLES_DIR is a bind-mounted host folder; each entry in SAMPLE_COLLECTIONS
+# maps a top-level folder to the sub-folders that hold images.
+# Thumbnails live under <SAMPLES_DIR>/.thumbs/<same relative path>.
+# ---------------------------------------------------------------------------
+SAMPLES_DIR = Path(os.environ.get("SAMPLES_DIR", "/app/samples"))
+THUMBS_DIR = SAMPLES_DIR / ".thumbs"
+IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+SAMPLE_COLLECTIONS = {
+    "real": {
+        "name": "Real photos (Kaggle source)",
+        "root": "Mosquito_dataset",
+        "folders": {"AEDES": "Aedes", "ANOPHELES": "Anopheles", "CULEX": "Culex"},
+    },
+    "synthetic": {
+        "name": "Synthetic scenes (generated dataset)",
+        "root": "Mosquito_YOLO_Seg_new",
+        "folders": {"val/images": "Validation split", "train/images": "Training split"},
+    },
+}
+
+if SAMPLES_DIR.is_dir():
+    app.mount("/samples", StaticFiles(directory=str(SAMPLES_DIR)), name="samples")
+    print(f"[INFO] Sample library mounted from {SAMPLES_DIR}")
+else:
+    print(f"[INFO] No sample library at {SAMPLES_DIR}; /api/samples disabled.")
 
 # Configure CORS for Next.js frontend
 app.add_middleware(
@@ -56,6 +87,65 @@ DISEASE_MAP = {
 @app.get("/")
 def read_root():
     return {"message": "MosquitoVision FastAPI Backend is running."}
+
+
+def _folder_path(collection: str, folder: str) -> Path:
+    """Resolve a (collection, folder) pair to an on-disk directory, rejecting
+    anything that is not an explicitly configured sample folder."""
+    coll = SAMPLE_COLLECTIONS.get(collection)
+    if not coll or folder not in coll["folders"]:
+        raise HTTPException(status_code=404, detail="Unknown sample folder.")
+    path = SAMPLES_DIR / coll["root"] / folder
+    if not path.is_dir():
+        raise HTTPException(status_code=404, detail="Sample folder not present on server.")
+    return path
+
+
+@app.get("/api/samples")
+def list_sample_collections():
+    """Top-level catalogue of sample folders and how many images each holds."""
+    if not SAMPLES_DIR.is_dir():
+        return {"collections": []}
+    out = []
+    for cid, coll in SAMPLE_COLLECTIONS.items():
+        folders = []
+        for fid, label in coll["folders"].items():
+            p = SAMPLES_DIR / coll["root"] / fid
+            if p.is_dir():
+                n = sum(1 for f in p.iterdir() if f.suffix.lower() in IMAGE_EXTS)
+                folders.append({"id": fid, "name": label, "count": n})
+        if folders:
+            out.append({"id": cid, "name": coll["name"], "folders": folders})
+    return {"collections": out}
+
+
+@app.get("/api/samples/{collection}/{folder:path}")
+def list_sample_images(
+    collection: str,
+    folder: str,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(24, ge=1, le=96),
+    seed: int | None = Query(None, description="Shuffle deterministically with this seed"),
+):
+    """Page through the images in one sample folder. With `seed`, the folder
+    is shuffled so the demo can show a different random set each time."""
+    path = _folder_path(collection, folder)
+    files = sorted(f.name for f in path.iterdir() if f.suffix.lower() in IMAGE_EXTS)
+    if seed is not None:
+        random.Random(seed).shuffle(files)
+    root = SAMPLE_COLLECTIONS[collection]["root"]
+    page = files[offset:offset + limit]
+    items = []
+    for name in page:
+        rel = f"{root}/{folder}/{name}"
+        thumb_rel = f".thumbs/{rel}"
+        items.append({
+            "name": name,
+            "url": f"/samples/{rel}",
+            # Fall back to the full image if no thumbnail has been generated.
+            "thumb": f"/samples/{thumb_rel}" if (THUMBS_DIR / rel).exists() else f"/samples/{rel}",
+        })
+    return {"total": len(files), "offset": offset, "limit": limit, "items": items}
 
 @app.post("/api/analyze")
 async def analyze_image(file: UploadFile = File(...)):
